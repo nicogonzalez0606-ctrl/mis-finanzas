@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f1923" />
+  <meta name="mobile-web-app-capable" content="true" />
+  <meta name="apple-mobile-web-app-capable" content="true" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Finanzas" />
+  <title>Control de Finanzas</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.svg" />
+  <link rel="apple-touch-icon" href="icon-192.svg" />
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0f1923;
+      --surface:   #162030;
+      --surface2:  #1e2d40;
+      --surface3:  #243448;
+      --border:    #2a3d54;
+      --text:      #e8edf2;
+      --muted:     #7a92a8;
+      --inv:       #3b9edd;
+      --gas:       #e85c5c;
+      --deu:       #a855f7;
+      --seg:       #34c97e;
+      --cap:       #f5a623;
+      --imp:       #f07040;
+      --ahorro:    #00d4aa;
+      --salary:    #34c97e;
+      --accent:    #3b9edd;
+      --radius:    14px;
+      --radius-sm: 8px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ── BOTTOM NAV ─────────────────────────────────────── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 64px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .3px;
+      cursor: pointer;
+      transition: color .2s;
+    }
+    .nav-btn.active { color: var(--accent); }
+    .nav-btn svg { width: 22px; height: 22px; }
+
+    /* ── PAGES ──────────────────────────────────────────── */
+    .page { display: none; padding: 16px 16px 80px; }
+    .page.active { display: block; }
+
+    /* ── TOP BAR ─────────────────────────────────────────── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      padding: 16px 0 10px;
+      z-index: 50;
+      margin-bottom: 12px;
+    }
+    .topbar h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.5px;
+    }
+    .topbar h1 span { color: var(--accent); }
+
+    /* ── MONTH SELECTOR ─────────────────────────────────── */
+    #month-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      margin-bottom: 16px;
+    }
+    #month-strip::-webkit-scrollbar { display: none; }
+    .month-pill {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .month-pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── CARDS ───────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+    .card-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .card-total {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    /* ── SALARY CARD ────────────────────────────────────── */
+    #salary-card {
+      background: linear-gradient(135deg, #162e20 0%, #1a3828 100%);
+      border-color: #2a5040;
+    }
+    #salary-card .card-title { color: var(--salary); }
+    #salary-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      border: 1.5px solid #2a5040;
+    }
+    #salary-input-wrap span { color: var(--salary); font-weight: 800; font-size: 18px; }
+    #salary-input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 800;
+      width: 100%;
+    }
+
+    /* ── SUMMARY ROW (top) ──────────────────────────────── */
+    #summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .summary-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .summary-tile .label { font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .summary-tile .value { font-size: 18px; font-weight: 800; }
+    .summary-tile .pct  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ── ITEM LIST ──────────────────────────────────────── */
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-label { flex: 1; font-size: 13px; color: var(--muted); }
+    .item-amount {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      width: 110px;
+      text-align: right;
+      outline: none;
+    }
+    .item-amount:focus { border-color: var(--accent); }
+
+    /* ── PIE CHART ──────────────────────────────────────── */
+    #chart-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    #pie-canvas { max-width: 240px; width: 100%; }
+    #legend {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .legend-val { font-weight: 700; color: var(--text); }
+
+    /* ── ANNUAL TABLE ───────────────────────────────────── */
+    #annual-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { padding: 8px 10px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: .5px; }
+    td:first-child { font-weight: 700; }
+    td.num { text-align: right; }
+    tr:hover td { background: var(--surface2); }
+    .row-salary td:first-child { color: var(--salary); }
+    .row-inv    td:first-child { color: var(--inv); }
+    .row-gas    td:first-child { color: var(--gas); }
+    .row-deu    td:first-child { color: var(--deu); }
+    .row-seg    td:first-child { color: var(--seg); }
+    .row-cap    td:first-child { color: var(--cap); }
+    .row-imp    td:first-child { color: var(--imp); }
+    .row-ahorro td { color: var(--ahorro); font-weight: 800; }
+    .row-ahorro td:first-child { color: var(--ahorro); }
+
+    /* ── INSTALL BANNER ─────────────────────────────────── */
+    #install-banner {
+      display: none;
+      position: fixed;
+      bottom: 68px; left: 12px; right: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      z-index: 200;
+      box-shadow: var(--shadow);
+      animation: slideup .3s ease;
+    }
+    @keyframes slideup { from { transform: translateY(20px); opacity: 0; } }
+    #install-banner p { font-size: 13px; margin-bottom: 10px; line-height: 1.5; }
+    #install-banner strong { color: var(--accent); }
+    .banner-btns { display: flex; gap: 8px; }
+    .btn-install {
+      flex: 1;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .btn-dismiss {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* ── MISC ───────────────────────────────────────────── */
+    .section-gap { height: 8px; }
+    .empty-state { text-align: center; color: var(--muted); font-size: 14px; padding: 24px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ PAGE: MES ════════════════ -->
+<div id="page-mes" class="page active">
+  <div class="topbar">
+    <h1>💰 Mis <span>Finanzas</span></h1>
+  </div>
+
+  <!-- Month strip -->
+  <div id="month-strip"></div>
+
+  <!-- Salary -->
+  <div class="card" id="salary-card">
+    <div class="card-header">
+      <div class="card-title"><span class="card-dot" style="background:var(--salary)"></span>Salario del mes</div>
+    </div>
+    <div id="salary-input-wrap">
+      <span>€</span>
+      <input id="salary-input" type="number" inputmode="decimal" placeholder="0.00" />
+    </div>
+  </div>
+
+  <!-- Summary tiles -->
+  <div id="summary-grid">
+    <div class="summary-tile">
+      <div class="label">Total gastado</div>
+      <div class="value" id="tile-spent" style="color:var(--gas)">€0</div>
+      <div class="pct" id="tile-spent-pct">— del salario</div>
+    </div>
+    <div class="summary-tile">
+      <div class="label">Ahorro neto</div>
+      <div class="value" id="tile-saving" style="color:var(--ahorro)">€0</div>
+      <div class="pct" id="tile-saving-pct">— del salario</div>
+    </div>
+  </div>
+
+  <!-- Category cards injected by JS -->
+  <div id="cat-cards"></div>
+</div>
+
+<!-- ════════════════ PAGE: GRÁFICA ════════════════ -->
+<div id="page-grafica" class="page">
+  <div class="topbar">
+    <h1>📊 <span>Distribución</span></h1>
+  </div>
+  <div id="month-strip-2"></div>
+  <div class="card">
+    <div id="chart-wrap">
+      <canvas id="pie-canvas" width="240" height="240"></canvas>
+      <div id="legend"></div>
+    </div>
+  </div>
+  <div class="card" id="detail-card">
+    <div class="card-title" style="margin-bottom:12px;font-size:13px">Desglose</div>
+    <div id="detail-list"></div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGE: ANUAL ════════════════ -->
+<div id="page-anual" class="page">
+  <div class="topbar">
+    <h1>📅 Resumen <span>Anual</span></h1>
+  </div>
+  <div class="card" style="padding:0 0 4px">
+    <div id="annual-scroll">
+      <table id="annual-table">
+        <thead>
+          <tr id="annual-head"></tr>
+        </thead>
+        <tbody id="annual-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ BOTTOM NAV ════════════════ -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" data-page="mes" onclick="showPage('mes',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Mes
+  </button>
+  <button class="nav-btn" data-page="grafica" onclick="showPage('grafica',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>
+    Gráfica
+  </button>
+  <button class="nav-btn" data-page="anual" onclick="showPage('anual',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Anual
+  </button>
+</nav>
+
+<!-- Install banner -->
+<div id="install-banner">
+  <p>Añade <strong>Control de Finanzas</strong> a tu pantalla de inicio para usarla como una app.</p>
+  <div class="banner-btns">
+    <button class="btn-install" id="btn-install">Instalar app</button>
+    <button class="btn-dismiss" onclick="document.getElementById('install-banner').style.display='none'">Ahora no</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+const CATEGORIES = [
+  { key:"inv", label:"Inversiones",  icon:"💼", color:"#3b9edd",
+    items:["Bolsa / ETFs","Criptomonedas","Plan de pensiones","Fondos","Inmuebles","Otros"] },
+  { key:"gas", label:"Gastos",       icon:"🛒", color:"#e85c5c",
+    items:["Alquiler / Hipoteca","Alimentación","Transporte","Suministros","Internet / Teléfono","Ocio","Ropa","Otros"] },
+  { key:"deu", label:"Deudas",       icon:"💳", color:"#a855f7",
+    items:["Préstamo personal","Tarjeta de crédito","Préstamo coche","Préstamo estudios","Otros"] },
+  { key:"seg", label:"Seguros",      icon:"🛡️", color:"#34c97e",
+    items:["Seguro médico","Seguro de coche","Seguro de hogar","Seguro de vida","Otros"] },
+  { key:"cap", label:"Caprichos",    icon:"✨", color:"#f5a623",
+    items:["Viajes","Electrónica","Moda / Accesorios","Hobbies","Restaurantes especiales","Otros"] },
+  { key:"imp", label:"Imprevistos",  icon:"⚡", color:"#f07040",
+    items:["Reparaciones hogar","Médico / Farmacia","Multas","Avería coche","Otros"] },
+];
+
+// ── STATE ────────────────────────────────────────────────────
+const today = new Date();
+let currentMonth = today.getMonth(); // 0-based
+
+function loadData(m) {
+  const raw = localStorage.getItem(`finanzas_${m}`);
+  return raw ? JSON.parse(raw) : { salary: 0, cats: {} };
+}
+function saveData(m, data) {
+  localStorage.setItem(`finanzas_${m}`, JSON.stringify(data));
+}
+function getData(m) { return loadData(m); }
+
+// ── FORMAT ───────────────────────────────────────────────────
+function fmt(n) {
+  return '€' + Number(n||0).toLocaleString('es-ES', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function pct(a, b) {
+  if (!b) return '—';
+  return Math.round((a/b)*100) + '%';
+}
+
+// ── MONTH STRIP ──────────────────────────────────────────────
+function buildStrip(containerId, onSelect) {
+  const strip = document.getElementById(containerId);
+  strip.innerHTML = '';
+  MONTHS.forEach((m,i) => {
+    const btn = document.createElement('button');
+    btn.className = 'month-pill' + (i === currentMonth ? ' active' : '');
+    btn.textContent = m.substring(0,3);
+    btn.onclick = () => {
+      currentMonth = i;
+      document.querySelectorAll('.month-pill').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.month-pill').forEach((b,j) => { if(j%12===i) b.classList.add('active'); });
+      onSelect(i);
+    };
+    strip.appendChild(btn);
+  });
+  // scroll to current
+  strip.children[currentMonth]?.scrollIntoView({block:'nearest',inline:'center'});
+}
+
+// ── PAGE: MES ────────────────────────────────────────────────
+function renderMes() {
+  buildStrip('month-strip', () => renderMes());
+
+  const data = getData(currentMonth);
+
+  // salary
+  const salaryInput = document.getElementById('salary-input');
+  salaryInput.value = data.salary || '';
+  salaryInput.oninput = () => {
+    data.salary = parseFloat(salaryInput.value) || 0;
+    saveData(currentMonth, data);
+    updateSummaryTiles(data);
+  };
+
+  // category cards
+  const container = document.getElementById('cat-cards');
+  container.innerHTML = '';
+
+  CATEGORIES.forEach(cat => {
+    const catData = data.cats[cat.key] || {};
+    let catTotal = cat.items.reduce((s,item) => s + (parseFloat(catData[item])||0), 0);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    const title = document.createElement('div');
+    title.className = 'card-title';
+    title.innerHTML = `<span class="card-dot" style="background:${cat.color}"></span>${cat.icon} ${cat.label}`;
+    const total = document.createElement('div');
+    total.className = 'card-total';
+    total.style.color = cat.color;
+    total.textContent = fmt(catTotal);
+    header.appendChild(title);
+    header.appendChild(total);
+    card.appendChild(header);
+
+    cat.items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'item-row';
+      const lbl = document.createElement('div');
+      lbl.className = 'item-label';
+      lbl.textContent = item;
+      const inp = document.createElement('input');
+      inp.type = 'number';
+      inp.inputMode = 'decimal';
+      inp.className = 'item-amount';
+      inp.placeholder = '0.00';
+      inp.value = catData[item] || '';
+      inp.onfocus = () => inp.style.borderColor = cat.color;
+      inp.onblur  = () => inp.style.borderColor = '';
+      inp.oninput = () => {
+        if (!data.cats[cat.key]) data.cats[cat.key] = {};
+        data.cats[cat.key][item] = parseFloat(inp.value) || 0;
+        saveData(currentMonth, data);
+        // update card total
+        const newTotal = cat.items.reduce((s,it) => s + (parseFloat(data.cats[cat.key][it])||0), 0);
+        total.textContent = fmt(newTotal);
+        updateSummaryTiles(data);
+      };
+      row.appendChild(lbl);
+      row.appendChild(inp);
+      card.appendChild(row);
+    });
+
+    container.appendChild(card);
+  });
+
+  updateSummaryTiles(data);
+}
+
+function updateSummaryTiles(data) {
+  const salary = parseFloat(data.salary) || 0;
+  const spent = CATEGORIES.reduce((s, cat) => {
+    const catData = data.cats[cat.key] || {};
+    return s + cat.items.reduce((ss, item) => ss + (parseFloat(catData[item])||0), 0);
+  }, 0);
+  const saving = salary - spent;
+
+  document.getElementById('tile-spent').textContent = fmt(spent);
+  document.getElementById('tile-spent-pct').textContent = pct(spent, salary) + ' del salario';
+  document.getElementById('tile-saving').textContent = fmt(saving);
+  document.getElementById('tile-saving').style.color = saving >= 0 ? 'var(--ahorro)' : 'var(--gas)';
+  document.getElementById('tile-saving-pct').textContent = pct(Math.abs(saving), salary) + (saving >= 0 ? ' ahorrado' : ' en negativo');
+}
+
+// ── PAGE: GRÁFICA ─────────────────────────────────────────────
+let pieChart = null;
+
+function renderGrafica() {
+  buildStrip('month-strip-2', () => renderGrafica());
+
+  const data = getData(currentMonth);
+  const salary = parseFloat(data.salary) || 0;
+
+  const values = CATEGORIES.map(cat => {
+    const catData = data.cats[cat.key] || {};
+    return cat.items.reduce((s, item) => s + (parseFloat(catData[item])||0), 0);
+  });
+  const totalSpent = values.reduce((a,b)=>a+b,0);
+  const saving = Math.max(0, salary - totalSpent);
+  const allVals = [...values, saving];
+  const allLabels = [...CATEGORIES.map(c=>c.label), 'Ahorro'];
+  const allColors = [...CATEGORIES.map(c=>c.color), '#00d4aa'];
+
+  // Draw pie
+  const canvas = document.getElementById('pie-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 10;
+  const total = allVals.reduce((a,b)=>a+b,0);
+
+  if (total === 0) {
+    ctx.fillStyle = '#2a3d54';
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#7a92a8';
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sin datos', cx, cy);
+  } else {
+    let start = -Math.PI / 2;
+    allVals.forEach((v, i) => {
+      if (!v) return;
+      const slice = (v / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, start, start + slice);
+      ctx.closePath();
+      ctx.fillStyle = allColors[i];
+      ctx.fill();
+      ctx.strokeStyle = '#0f1923';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      start += slice;
+    });
+    // donut hole
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.52, 0, Math.PI*2);
+    ctx.fillStyle = '#162030';
+    ctx.fill();
+    // center text
+    ctx.fillStyle = '#e8edf2';
+    ctx.font = 'bold 15px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pct(totalSpent, salary || totalSpent), cx, cy - 6);
+    ctx.fillStyle = '#7a92a8';
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('gastado', cx, cy + 12);
+  }
+
+  // Legend
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '';
+  allLabels.forEach((lbl, i) => {
+    if (!allVals[i]) return;
+    const el = document.createElement('div');
+    el.className = 'legend-item';
+    el.innerHTML = `<span class="legend-dot" style="background:${allColors[i]}"></span>
+      <span>${lbl} <span class="legend-val">${fmt(allVals[i])}</span></span>`;
+    legend.appendChild(el);
+  });
+
+  // Detail list
+  const dl = document.getElementById('detail-list');
+  dl.innerHTML = '';
+  CATEGORIES.forEach((cat, i) => {
+    if (!values[i]) return;
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `<span class="card-dot" style="background:${cat.color}"></span>
+      <span class="item-label">${cat.icon} ${cat.label}</span>
+      <span style="font-weight:700;color:${cat.color}">${fmt(values[i])}</span>
+      <span style="color:var(--muted);font-size:11px;margin-left:4px">${pct(values[i],salary)}</span>`;
+    dl.appendChild(row);
+  });
+  if (saving > 0) {
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    row.innerHTML = `<span class="card-dot" style="background:var(--ahorro)"></span>
+      <span class="item-label">💚 Ahorro</span>
+      <span style="font-weight:700;color:var(--ahorro)">${fmt(saving)}</span>
+      <span style="color:var(--muted);font-size:11px;margin-left:4px">${pct(saving,salary)}</span>`;
+    dl.appendChild(row);
+  }
+}
+
+// ── PAGE: ANUAL ───────────────────────────────────────────────
+function renderAnual() {
+  // build header
+  const head = document.getElementById('annual-head');
+  head.innerHTML = '<th>—</th>' + MONTHS.map(m=>`<th>${m.substring(0,3)}</th>`).join('') + '<th>Total</th>';
+
+  const rows = [
+    { key:'salary', label:'💵 Salario', cls:'row-salary', fn: d => parseFloat(d.salary)||0 },
+    ...CATEGORIES.map(cat => ({
+      key: cat.key, label: cat.icon+' '+cat.label, cls:'row-'+cat.key,
+      fn: d => {
+        const catData = d.cats[cat.key]||{};
+        return cat.items.reduce((s,it)=>s+(parseFloat(catData[it])||0),0);
+      }
+    })),
+    { key:'ahorro', label:'💚 Ahorro', cls:'row-ahorro', fn: d => {
+        const sal = parseFloat(d.salary)||0;
+        return sal - CATEGORIES.reduce((s,cat)=>{
+          const cd=d.cats[cat.key]||{};
+          return s+cat.items.reduce((ss,it)=>ss+(parseFloat(cd[it])||0),0);
+        },0);
+      }
+    },
+  ];
+
+  const body = document.getElementById('annual-body');
+  body.innerHTML = '';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = r.cls;
+    const vals = MONTHS.map((_,i) => r.fn(getData(i)));
+    const total = vals.reduce((a,b)=>a+b,0);
+    tr.innerHTML = `<td>${r.label}</td>` +
+      vals.map(v=>`<td class="num">${v?fmt(v):'—'}</td>`).join('') +
+      `<td class="num">${fmt(total)}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'mes')     renderMes();
+  if (id === 'grafica') renderGrafica();
+  if (id === 'anual')   renderAnual();
+}
+
+// ── PWA INSTALL ───────────────────────────────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('install-banner');
+  const shown = localStorage.getItem('install-dismissed');
+  if (!shown) banner.style.display = 'block';
+});
+document.getElementById('btn-install').onclick = async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner').style.display = 'none';
+  if (outcome === 'accepted') localStorage.setItem('install-dismissed','1');
+};
+document.querySelector('.btn-dismiss').addEventListener('click', () => {
+  localStorage.setItem('install-dismissed','1');
+});
+
+// ── SERVICE WORKER ────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderMes();
+</script>
+</body>
+</html>
